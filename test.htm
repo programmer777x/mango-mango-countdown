@@ -1,5 +1,3 @@
-<!--Mango Mango Countdown Temp-->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +6,7 @@
     <title>Mango Mango Countdown</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Tone.js for sound effects -->
+    <!-- Load Tone.js for sound effects (Re-added for celebration) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Custom styles for the Inter font and consistent box sizing */
@@ -32,15 +30,15 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            /* Background Image Application - YOUR WORKING SNOOPY URL */
-            background-image: url('https://lh5.googleusercontent.com/Jm8SW9ZXOInTtMUiPpvkv8-gW814L9Jk9aSVNiGJCPdhmEq2c0NKSkcYg8hd6cY_IMgRgq8bqxFP4K_NxkFmFII');
+            /* Background Image Application - Using the URL from your last request */
+            background-image: url('https://raw.githubusercontent.com/programmer777x/mango-mango-countdown/main/Anime%20Chibi%20Congratulations%206%20-%20Adjusted.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             /* Filter Applied ONLY to the background layer */
-            filter: brightness(1.1) opacity(0.5); 
+            filter: brightness(1.1) opacity(1.0); 
         }
-        /* Main wrapper now aligns content to the bottom */
+        /* Main wrapper now aligns content to the bottom (as per your request) */
         #main-wrapper {
             width: 100%;
             height: 100%;
@@ -55,12 +53,12 @@
         }
         /* Countdown Card Container */
         #countdown-container {
-            /* FADED MORE: Reduced opacity to 0.5 (more transparent) */
+            /* FADED MORE: Reduced opacity to 0.5 (more transparent, as per your request) */
             background-color: rgba(255, 255, 255, 0.5); 
             backdrop-filter: blur(5px); 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); 
             transition: all 0.3s ease-in-out;
-            position: relative; /* Needed for the shake animation */
+            position: relative; 
         }
         /* Keyframes for the shake animation */
         @keyframes shake {
@@ -70,7 +68,7 @@
         }
         /* Class to apply the shake animation */
         .shake-animation {
-            animation: shake 0.4s ease-in-out 3; /* Shake 3 times */
+            animation: shake 0.4s ease-in-out 3; 
         }
         /* Confetti particle style (Pure CSS/JS) */
         .confetti-particle {
@@ -146,7 +144,8 @@
     <div id="main-wrapper">
         <!-- Countdown Container -->
         <div id="countdown-container" class="w-full max-w-xl mx-auto text-center p-6 rounded-xl shadow-2xl border border-gray-100">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-6 tracking-tight">
+            <!-- HEADING ADJUSTMENT: Changed text-2xl to text-xl for small screen single-line fit -->
+            <h1 class="text-xl sm:text-3xl font-extrabold text-gray-800 mb-6 tracking-tight">
                 🥭 Mango Mango Countdown 🥭
             </h1>
             <!-- The Countdown Display -->
@@ -174,8 +173,18 @@
             </div>
         </div>
     </div>
+    
+    <!-- Floating Audio Enable Prompt (Re-added) -->
+    <div id="audio-prompt-message" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex justify-center items-center p-4 z-50 hidden">
+        <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg shadow-2xl text-center max-w-sm">
+            <p class="font-bold text-lg mb-2">🔊 Audio Blocked</p>
+            <p class="text-sm">Click anywhere on the screen to enable the celebratory sound!</p>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURATION ---
+        // Target date from your last provided code
         const TARGET_DATE = new Date("November 13, 2025 12:00:00").getTime();
         
         // Working Schedule
@@ -191,6 +200,7 @@
         const secondsEl = document.getElementById('seconds');
         const expiryMessageEl = document.getElementById('expiry-message');
         const countdownContainerEl = document.getElementById('countdown-container');
+        const audioPromptEl = document.getElementById('audio-prompt-message'); // Re-added
 
         // Global variable for the Tone.js synth
         let synth = null;
@@ -203,15 +213,39 @@
         // Colors for the pure JS confetti
         const PARTICLE_COLORS = ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0'];
 
-        /**
-         * Initializes and plays a celebratory chime using Tone.js.
-         */
-        function playCelebrationTone() {
-            // Check if the Tone context is suspended and resume it (required by browsers)
-            if (Tone.context.state !== 'running') {
-                Tone.context.resume();
-            }
+        // --- AUDIO ENABLE LOGIC (Re-added) ---
+        let audioContextEnabled = false;
 
+        /**
+         * Attaches a single-use listener to the document to resume the audio context.
+         */
+        function enableAudioContext() {
+            if (audioContextEnabled || Tone.context.state === 'running') return;
+            
+            // Attempt to resume/start the audio context on the first user interaction
+            Tone.context.resume().then(() => {
+                audioContextEnabled = true;
+                // Hide the prompt message
+                audioPromptEl.classList.add('hidden');
+                
+                // If the celebration already started (but silently), play the sound now
+                if (celebrationRun) {
+                    playCelebrationTone(true); // Force play once enabled
+                }
+            }).catch(e => {
+                console.error("Failed to resume AudioContext:", e);
+            });
+        }
+        
+        // Attach the listener to the whole document for maximum click capture
+        document.addEventListener('click', enableAudioContext, { once: true });
+        document.addEventListener('touchstart', enableAudioContext, { once: true });
+
+
+        /**
+         * The actual Tone.js sequence.
+         */
+        function _actuallyPlayTone() {
             if (synth === null) {
                 // Initialize the synth (PolySynth for a chord)
                 synth = new Tone.PolySynth(Tone.Synth, {
@@ -227,14 +261,31 @@
             
             // Play a bright, celebratory chord (e.g., C major)
             const now = Tone.now();
-            
-            // Schedule the notes (C5, E5, G5) - 8th note duration
             synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
-            
-            // Schedule a slightly higher, shorter chime (C6) right after for a "sparkle" effect
             synth.triggerAttackRelease(["C6"], "16n", now + 0.1); 
         }
-        
+
+        /**
+         * Initializes and plays a celebratory chime using Tone.js, checking context state.
+         * @param {boolean} forcePlay - If true, plays immediately if context is running.
+         */
+        function playCelebrationTone(forcePlay = false) {
+            if (Tone.context.state === 'running' || forcePlay) {
+                 _actuallyPlayTone();
+                 audioPromptEl.classList.add('hidden'); // Ensure hidden if sound plays
+            } else if (Tone.context.state === 'suspended') {
+                Tone.context.resume().then(() => {
+                    audioContextEnabled = true;
+                    _actuallyPlayTone();
+                    audioPromptEl.classList.add('hidden');
+                }).catch(() => {
+                    audioPromptEl.classList.remove('hidden');
+                });
+            } else {
+                 audioPromptEl.classList.remove('hidden');
+            }
+        }
+
         /**
          * Pure JavaScript/CSS Confetti Emitter
          */
@@ -244,6 +295,7 @@
             const numParticles = 30;
             const containerRect = countdownContainerEl.getBoundingClientRect();
             
+            // Emit particles from the bottom center of the card
             const centerX = containerRect.left + containerRect.width / 2;
             const centerY = containerRect.top + countdownContainerEl.offsetHeight; 
             
@@ -251,10 +303,12 @@
                 const particle = document.createElement('div');
                 particle.classList.add('confetti-particle');
                 
-                const xOffset = Math.random() * 60 - 30; // -30px to 30px
+                const xOffset = Math.random() * 60 - 30; // -30px to 30px horizontal spread
                 const yOffset = Math.random() * 20;
+                
                 particle.style.left = `${centerX + xOffset}px`;
                 particle.style.top = `${centerY + yOffset}px`;
+                
                 particle.style.backgroundColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
                 document.body.appendChild(particle);
                 
@@ -287,10 +341,10 @@
             
             celebrationRun = true;
             
-            // 1. Play the sound immediately
+            // 1. Play the sound (will attempt to resume context or show prompt)
             playCelebrationTone();
 
-            const run Effects = () => {
+            const runEffects = () => {
                 // 2. Shake Animation
                 countdownContainerEl.classList.remove('shake-animation');
                 void countdownContainerEl.offsetWidth; 
@@ -298,29 +352,36 @@
                 
                 // 3. Pure JS Particle Effect
                 emitParticles();
+                
+                // If audio isn't running, pulse the text as a visual cue/reminder
+                if (Tone.context.state !== 'running') {
+                    expiryMessageEl.classList.add('fancy-pulse');
+                } else {
+                    expiryMessageEl.classList.remove('fancy-pulse');
+                }
             };
             
             runEffects(); 
+            // Repeat the effects every 750ms
             celebrationInterval = setInterval(runEffects, 750); 
             
             // Stop the repeating effects after 5 seconds
             celebrationDurationTimeout = setTimeout(() => {
                 clearInterval(celebrationInterval);
                 celebrationInterval = null;
+                expiryMessageEl.classList.remove('fancy-pulse');
             }, 5000); 
         }
         
         /**
          * Checks if a given day index is a workday.
-         * @param {number} dayIndex - 0 (Sunday) to 6 (Saturday)
          */
         function isWorkday(dayIndex) {
             return !DAYS_OFF.includes(dayIndex);
         }
         
         /**
-         * Calculates the total remaining work seconds until the TARGET_DATE,
-         * only counting time between START_HOUR (8 AM) and END_HOUR (4 PM) on workdays.
+         * Calculates the total remaining work seconds until the TARGET_DATE.
          */
         function calculateWorkTimeRemaining(targetTimestamp, startHour, endHour) {
             let totalWorkSeconds = 0;
@@ -342,25 +403,19 @@
 
             if (isTodayWorkday) {
                 if (isTargetToday) {
-                    // Target is TODAY: Count time between now and the capped target time (max 4 PM)
                     let effectiveEnd = Math.min(targetTimestamp, workEndToday);
                     
                     if (currentTime < workStartToday) {
-                        // Before 8 AM: Count from 8 AM up to effective end time.
                         if (effectiveEnd > workStartToday) {
                             totalWorkSeconds += (effectiveEnd - workStartToday) / 1000;
                         }
                     } else if (currentTime < effectiveEnd) {
-                        // During work hours: Count from now up to effective end time.
                         totalWorkSeconds += (effectiveEnd - currentTime) / 1000;
                     }
                 } else { 
-                    // Target is a FUTURE date: Count work time remaining TODAY.
                     if (currentTime < workStartToday) {
-                        // Before 8 AM: Count the full 8-hour shift remaining today
                         totalWorkSeconds += SECONDS_PER_WORKDAY;
                     } else if (currentTime < workEndToday) {
-                        // During work hours: Count from now until 4 PM
                         totalWorkSeconds += (workEndToday - currentTime) / 1000;
                     }
                 }
@@ -370,7 +425,7 @@
                  return Math.max(0, Math.floor(totalWorkSeconds));
             }
             
-            // --- Phase 2: Full Days Between Current Day and Target Day ---
+            // --- Phase 2 & 3: Full Days and Target Day Logic ---
             
             let startIterDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             startIterDay.setDate(startIterDay.getDate() + 1); 
@@ -386,14 +441,12 @@
                 currentIter.setDate(currentIter.getDate() + 1);
             }
 
-            // --- Phase 3: Target Day Logic ---
             const targetDayIndex = target.getDay();
 
             if (isWorkday(targetDayIndex)) {
                 let targetWorkStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), startHour, 0, 0).getTime();
                 let targetWorkEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate(), endHour, 0, 0).getTime();
 
-                // Effective end time is the earlier of the actual target time (18:38) or the work end time (4 PM).
                 let effectiveTargetTime = Math.min(targetTimestamp, targetWorkEnd);
 
                 if (effectiveTargetTime > targetWorkStart) {
@@ -424,16 +477,16 @@
                 expiryMessageEl.innerHTML = `
                     <span 
                         class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
-                               bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
-                               fancy-pulse">
+                            bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
+                            fancy-pulse">
                         FREEEEEDOMMM!
                     </span>
                 `;
                 
                 expiryMessageEl.classList.remove('hidden');
-                document.getElementById('timer-display').classList.add('opacity-50');
+                document.getElementById('timer-display').classList.add('opacity-50'); 
                 
-                // Trigger effects including sound!
+                // Trigger effects automatically!
                 triggerCelebration(); 
                 return;
             }
@@ -458,7 +511,13 @@
         
         window.onload = function() {
             updateCountdown();
-            countdownInterval = setInterval(updateCountdown, 1000);
+            // Start the interval only if the celebration hasn't started yet (for future runs)
+            if (document.getElementById('timer-display').classList.contains('hidden') && TARGET_DATE < Date.now()) {
+                // If expired on load, we don't need the interval, but we must call triggerCelebration
+                triggerCelebration(); 
+            } else {
+                 countdownInterval = setInterval(updateCountdown, 1000);
+            }
         }
     </script>
 </body>
