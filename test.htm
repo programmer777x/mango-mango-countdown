@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Inter Font -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght00;600;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
     </style>
     <!-- Load Tone.js -->
@@ -18,10 +18,10 @@
 
     <div id="timer-card" class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-lg text-center transform transition-all duration-300">
         
-        <!-- VERSION NUMBER ADDED HERE -->
+        <!-- VERSION NUMBER UPDATED HERE -->
         <h1 class="text-4xl font-extrabold text-indigo-700 mb-6 tracking-tight flex justify-center items-center space-x-3">
             <span>Focus Timer</span>
-            <span class="text-xs font-medium text-gray-400 bg-indigo-100 px-2 py-0.5 rounded-full">v1.2</span>
+            <span class="text-xs font-medium text-gray-400 bg-indigo-100 px-2 py-0.5 rounded-full">v1.3</span>
         </h1>
 
         <!-- Timer Display -->
@@ -59,7 +59,7 @@
         <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-white p-8 rounded-xl shadow-2xl text-center w-full max-w-sm">
                 <h3 class="text-2xl font-bold text-red-600 mb-4">Time's Up! Congratulations!</h3>
-                <p id="modal-text" class="text-lg text-gray-700 mb-6">Your celebratory chime is playing!</p>
+                <p id="modal-text" class="text-lg text-gray-700 mb-6">Your 5-second celebratory chime is playing!</p>
                 <button id="modal-close-button" class="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-150">
                     Stop & Close
                 </button>
@@ -84,7 +84,7 @@
         let synth = null; // Tone.js PluckSynth instance
         let reverb = null; // Tone.js Reverb instance
 
-        // --- Tone.js Setup (Updated for a brighter, congratulatory sound) ---
+        // --- Tone.js Setup ---
         function setupAudio() {
             // A PluckSynth is ideal for bell, chime, or guitar-like sounds.
             synth = new Tone.PluckSynth().toDestination();
@@ -99,28 +99,47 @@
             synth.connect(reverb);
         }
         
-        // This function plays the celebratory sound
+        // This function plays the celebratory sound for ~5 seconds
         function playAlarm() {
-            // First, ensure audio context is running (required for browser security)
+            // First, ensure audio context is running
             if (Tone.context.state !== 'running') {
                 Tone.start();
                 statusMessage.textContent = "Audio context started!";
             }
             
-            // Play an ascending C major arpeggio (C4, E4, G4, C5) - sounds happy and conclusive.
-            const now = Tone.now();
-            const duration = "8n"; // Eight note duration for quick taps
-            const spacing = 0.1; // Delay between notes in seconds
+            // The repeating melody notes (C Major arpeggio and scale pattern)
+            const notes = ["C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4"];
+            const alarmDurationSeconds = 5.0; 
+            const noteInterval = "8n"; // Each note plays on an 8th note interval (faster than quarter notes)
             
-            synth.triggerAttackRelease("C4", duration, now);
-            synth.triggerAttackRelease("E4", duration, now + spacing * 1);
-            synth.triggerAttackRelease("G4", duration, now + spacing * 2);
-            synth.triggerAttackRelease("C5", duration, now + spacing * 3);
+            // Calculate how many 8th notes fit into the 5-second duration
+            // This ensures the loop stops precisely on time.
+            const totalScheduledNotes = Math.floor(alarmDurationSeconds / Tone.Time(noteInterval).toSeconds());
             
-            // Add a final, sustained chord for resolution
+            // Schedule all the notes using Tone.Transport
+            for (let i = 0; i < totalScheduledNotes; i++) {
+                const time = Tone.Time(noteInterval).toSeconds() * i; // Calculate the time offset
+                const note = notes[i % notes.length];
+                
+                // Schedule the note
+                Tone.Transport.scheduleOnce((t) => {
+                    synth.triggerAttackRelease(note, "16n", t);
+                }, time);
+            }
+            
+            // Schedule a final, sustained chord (C Major) immediately after the last note finishes
+            Tone.Transport.scheduleOnce((t) => {
+                synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "1n", t); 
+            }, Tone.Time(noteInterval).toSeconds() * totalScheduledNotes);
+
+
+            // Start the transport (the global clock)
+            Tone.Transport.start();
+            
+            // Schedule the transport to stop after the entire sequence has finished, plus a 1-second buffer for the final chord to decay.
             Tone.Transport.scheduleOnce(() => {
-                 synth.triggerAttackRelease(["C4", "E4", "G4"], "1n", Tone.now());
-            }, now + spacing * 4);
+                Tone.Transport.stop();
+            }, alarmDurationSeconds + 1); 
         }
 
         // This function stops the sound
