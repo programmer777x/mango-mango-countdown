@@ -202,8 +202,9 @@
         const countdownContainerEl = document.getElementById('countdown-container');
         const audioPromptEl = document.getElementById('audio-prompt-message'); // Re-added
 
-        // Global variable for the Tone.js synth
+        // Global variables for the Tone.js synth and effects
         let synth = null;
+        let reverb = null; // NEW: Reverb added for spaciousness
         
         // Flag and intervals for the celebration effects
         let celebrationRun = false;
@@ -230,7 +231,7 @@
                 
                 // If the celebration already started (but silently), play the sound now
                 if (celebrationRun) {
-                    playCelebrationTone(true); // Force play once enabled
+                    _actuallyPlayTone(); // Force play once enabled
                 }
             }).catch(e => {
                 console.error("Failed to resume AudioContext:", e);
@@ -243,47 +244,90 @@
 
 
         /**
-         * The actual Tone.js sequence.
+         * Schedules the 5-second celebratory tone sequence using Tone.Transport.
          */
-        function _actuallyPlayTone() {
-            if (synth === null) {
-                // Initialize the synth (PolySynth for a chord)
-                synth = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: "sine" }, // Use sine wave for a clean chime
-                    envelope: {
-                        attack: 0.05,
-                        decay: 0.3,
-                        sustain: 0.0,
-                        release: 0.5
-                    }
-                }).toDestination();
+        function _scheduleAlarm() {
+            // Stop any previous transport events before scheduling new ones
+            Tone.Transport.stop(); 
+            Tone.Transport.cancel(); 
+
+            // Notes for the 5-second C Major arpeggio pattern
+            const notes = ["C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4"];
+            const alarmDurationSeconds = 5.0; 
+            const noteInterval = "8n"; 
+            
+            // Calculate how many intervals fit into the 5-second duration
+            const intervalSeconds = Tone.Time(noteInterval).toSeconds();
+            const totalScheduledNotes = Math.floor(alarmDurationSeconds / intervalSeconds);
+            
+            // Schedule all the notes
+            for (let i = 0; i < totalScheduledNotes; i++) {
+                const time = intervalSeconds * i; 
+                const note = notes[i % notes.length];
+                
+                // Use 16th note duration for the pluck, to give it space
+                Tone.Transport.scheduleOnce((t) => {
+                    synth.triggerAttackRelease(note, "16n", t);
+                }, time);
             }
             
-            // Play a bright, celebratory chord (e.g., C major)
-            const now = Tone.now();
-            synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
-            synth.triggerAttackRelease(["C6"], "16n", now + 0.1); 
+            // Schedule a final, sustained chord (C Major) immediately after the loop ends
+            Tone.Transport.scheduleOnce((t) => {
+                synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "1n", t); 
+            }, intervalSeconds * totalScheduledNotes);
+
+
+            // Start the transport (the global clock)
+            Tone.Transport.start();
+            
+            // Schedule the transport to stop after the entire sequence has finished (5 seconds + 1s decay)
+            Tone.Transport.scheduleOnce(() => {
+                Tone.Transport.stop();
+                synth.releaseAll(); // Release any lingering notes
+            }, alarmDurationSeconds + 1); 
         }
 
         /**
-         * Initializes and plays a celebratory chime using Tone.js, checking context state.
-         * @param {boolean} forcePlay - If true, plays immediately if context is running.
+         * Initializes audio components and triggers the alarm sequence.
          */
-        function playCelebrationTone(forcePlay = false) {
-            if (Tone.context.state === 'running' || forcePlay) {
-                 _actuallyPlayTone();
-                 audioPromptEl.classList.add('hidden'); // Ensure hidden if sound plays
-            } else if (Tone.context.state === 'suspended') {
+        function _actuallyPlayTone() {
+            if (synth === null) {
+                // NEW: Initialize PluckSynth for the chime effect
+                synth = new Tone.PluckSynth({
+                    attackNoise: 1, 
+                    dampening: 4000, 
+                    resonance: 0.95 
+                }).toDestination();
+                
+                // NEW: Add Reverb for spaciousness
+                reverb = new Tone.Reverb({
+                    decay: 2, 
+                    preDelay: 0.01,
+                }).toDestination();
+                
+                synth.connect(reverb);
+            }
+            
+            // Ensure audio context is running before scheduling
+            if (Tone.context.state !== 'running') {
                 Tone.context.resume().then(() => {
+                    _scheduleAlarm();
                     audioContextEnabled = true;
-                    _actuallyPlayTone();
-                    audioPromptEl.classList.add('hidden');
                 }).catch(() => {
                     audioPromptEl.classList.remove('hidden');
                 });
             } else {
-                 audioPromptEl.classList.remove('hidden');
+                _scheduleAlarm();
+                audioPromptEl.classList.add('hidden');
             }
+        }
+
+        /**
+         * Initializes and plays a celebratory chime using Tone.js, checking context state.
+         * Note: This function now relies on _actuallyPlayTone to handle the 5-second scheduling.
+         */
+        function playCelebrationTone() {
+            _actuallyPlayTone();
         }
 
         /**
@@ -365,7 +409,7 @@
             // Repeat the effects every 750ms
             celebrationInterval = setInterval(runEffects, 750); 
             
-            // Stop the repeating effects after 5 seconds
+            // Stop the repeating visual effects after 5 seconds
             celebrationDurationTimeout = setTimeout(() => {
                 clearInterval(celebrationInterval);
                 celebrationInterval = null;
@@ -422,7 +466,7 @@
             }
 
             if (isTargetToday) {
-                 return Math.max(0, Math.floor(totalWorkSeconds));
+                return Math.max(0, Math.floor(totalWorkSeconds));
             }
             
             // --- Phase 2 & 3: Full Days and Target Day Logic ---
@@ -479,7 +523,7 @@
                         class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
                             bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
                             fancy-pulse">
-                        YOU DID IT!
+                        FREEEEEDOMMM!
                     </span>
                 `;
                 
@@ -512,11 +556,11 @@
         window.onload = function() {
             updateCountdown();
             // Start the interval only if the celebration hasn't started yet (for future runs)
-            if (document.getElementById('timer-display').classList.contains('hidden') && TARGET_DATE < Date.now()) {
-                // If expired on load, we don't need the interval, but we must call triggerCelebration
+            // The condition below ensures that if the target is in the past, we trigger celebration immediately.
+            if (TARGET_DATE < Date.now() && calculateWorkTimeRemaining(TARGET_DATE, START_HOUR, END_HOUR) === 0) {
                 triggerCelebration(); 
             } else {
-                 countdownInterval = setInterval(updateCountdown, 1000);
+                countdownInterval = setInterval(updateCountdown, 1000);
             }
         }
     </script>
