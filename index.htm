@@ -1,5 +1,4 @@
-<!--Mango Mango Countdown - Google Sites-->
-<!-- https://sites.google.com/view/prog7x/mango-mango-countdown -->
+<!--Mango Mango Countdown Temp-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,8 +8,8 @@
     <title>Mango Mango Countdown</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Confetti Library for celebration effect -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <!-- Load Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Custom styles for the Inter font and consistent box sizing */
         body {
@@ -25,7 +24,6 @@
             background-color: #f7f7f7;
             filter: none !important; 
         }
-
         /* --- DEDICATED BACKGROUND LAYER (Ensures filter doesn't affect content) --- */
         #background-overlay {
             position: fixed;
@@ -33,18 +31,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; 
-            
-            /* Background Image Application - REMEMBER TO REPLACE THIS PLACEHOLDER URL */
-            background-image: url('https://raw.githubusercontent.com/programmer777x/mango-mango-countdown/main/Anime%20Chibi%20Congratulations%203.jpg');
+            z-index: -1;
+            /* Background Image Application - YOUR WORKING SNOOPY URL */
+            background-image: url('https://lh5.googleusercontent.com/Jm8SW9ZXOInTtMUiPpvkv8-gW814L9Jk9aSVNiGJCPdhmEq2c0NKSkcYg8hd6cY_IMgRgq8bqxFP4K_NxkFmFII');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            
             /* Filter Applied ONLY to the background layer */
             filter: brightness(1.1) opacity(0.5); 
         }
-        
         /* Main wrapper now aligns content to the bottom */
         #main-wrapper {
             width: 100%;
@@ -58,7 +53,6 @@
             padding-bottom: 15vh; 
             filter: none !important; 
         }
-
         /* Countdown Card Container */
         #countdown-container {
             /* FADED MORE: Reduced opacity to 0.5 (more transparent) */
@@ -68,19 +62,26 @@
             transition: all 0.3s ease-in-out;
             position: relative; /* Needed for the shake animation */
         }
-
         /* Keyframes for the shake animation */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
-
         /* Class to apply the shake animation */
         .shake-animation {
             animation: shake 0.4s ease-in-out 3; /* Shake 3 times */
         }
-
+        /* Confetti particle style (Pure CSS/JS) */
+        .confetti-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #F6AD55; /* Mango color */
+            border-radius: 2px;
+            opacity: 0;
+            z-index: 1000;
+        }
         /* Custom class for the time unit cards */
         .time-card {
             background-color: #2D3748; 
@@ -130,65 +131,59 @@
                 gap: 1rem;
             }
         }
+        /* Keyframes for a custom subtle pulse used on the celebration text */
+        @keyframes vibrant-pulse {
+          0%, 100% { text-shadow: 0 0 5px rgba(255, 165, 0, 0.5); }
+          50% { text-shadow: 0 0 10px rgba(255, 200, 0, 0.8), 0 0 15px rgba(255, 100, 0, 0.5); }
+        }
+        .fancy-pulse {
+            animation: vibrant-pulse 2s infinite alternate;
+        }
     </style>
 </head>
 <body>
-    
     <div id="background-overlay"></div>
-
     <div id="main-wrapper">
         <!-- Countdown Container -->
         <div id="countdown-container" class="w-full max-w-xl mx-auto text-center p-6 rounded-xl shadow-2xl border border-gray-100">
-
             <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-6 tracking-tight">
                 🥭 Mango Mango Countdown 🥭
             </h1>
-            
             <!-- The Countdown Display -->
             <div id="timer-display" class="flex justify-center">
-                
                 <div class="time-card">
                     <span id="days" class="time-value">00</span>
                     <span class="time-label">Workdays</span>
                 </div>
-
                 <div class="time-card">
                     <span id="hours" class="time-value">00</span>
                     <span class="time-label">Hours</span>
                 </div>
-
                 <div class="time-card">
                     <span id="minutes" class="time-value">00</span>
                     <span class="time-label">Mins</span>
                 </div>
-
                 <div class="time-card">
                     <span id="seconds" class="time-value">00</span>
                     <span class="time-label">Secs</span>
                 </div>
-
             </div>
-            
             <!-- Expiry Message Container -->
             <div id="expiry-message" class="mt-8 text-xl font-semibold text-green-600 hidden">
                 <!-- Message displayed when the timer hits zero -->
             </div>
-
         </div>
     </div>
-
     <script>
         // --- CONFIGURATION ---
-        const TARGET_DATE = new Date("November 30, 2025 16:00:00").getTime();
+        const TARGET_DATE = new Date("November 13, 2025 12:00:00").getTime();
         
         // Working Schedule
-        // JS Day Index: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-        // Days Off: Monday (1) and Thursday (4)
-        const DAYS_OFF = [1, 4]; 
+        const DAYS_OFF = [1, 4]; // Monday (1) and Thursday (4)
         const START_HOUR = 8; // 8 AM
-        const END_HOUR = 16;  // 4 PM (24-hour format)
-        const SECONDS_PER_WORKDAY = (END_HOUR - START_HOUR) * 3600; // 8 hours * 3600 s/hr = 28800
-
+        const END_HOUR = 16;  // 4 PM (24-hour format)
+        const SECONDS_PER_WORKDAY = (END_HOUR - START_HOUR) * 3600;
+        
         // DOM Elements
         const daysEl = document.getElementById('days');
         const hoursEl = document.getElementById('hours');
@@ -197,30 +192,124 @@
         const expiryMessageEl = document.getElementById('expiry-message');
         const countdownContainerEl = document.getElementById('countdown-container');
 
-        // Flag to ensure the celebration only runs once
+        // Global variable for the Tone.js synth
+        let synth = null;
+        
+        // Flag and intervals for the celebration effects
         let celebrationRun = false;
+        let celebrationInterval = null;
+        let celebrationDurationTimeout = null;
+        
+        // Colors for the pure JS confetti
+        const PARTICLE_COLORS = ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0'];
 
         /**
-         * Runs the confetti effect and shake animation when the timer hits zero.
+         * Initializes and plays a celebratory chime using Tone.js.
+         */
+        function playCelebrationTone() {
+            // Check if the Tone context is suspended and resume it (required by browsers)
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+
+            if (synth === null) {
+                // Initialize the synth (PolySynth for a chord)
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" }, // Use sine wave for a clean chime
+                    envelope: {
+                        attack: 0.05,
+                        decay: 0.3,
+                        sustain: 0.0,
+                        release: 0.5
+                    }
+                }).toDestination();
+            }
+            
+            // Play a bright, celebratory chord (e.g., C major)
+            const now = Tone.now();
+            
+            // Schedule the notes (C5, E5, G5) - 8th note duration
+            synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+            
+            // Schedule a slightly higher, shorter chime (C6) right after for a "sparkle" effect
+            synth.triggerAttackRelease(["C6"], "16n", now + 0.1); 
+        }
+        
+        /**
+         * Pure JavaScript/CSS Confetti Emitter
+         */
+        function emitParticles() {
+            if (!countdownContainerEl) return;
+            
+            const numParticles = 30;
+            const containerRect = countdownContainerEl.getBoundingClientRect();
+            
+            const centerX = containerRect.left + containerRect.width / 2;
+            const centerY = containerRect.top + countdownContainerEl.offsetHeight; 
+            
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('confetti-particle');
+                
+                const xOffset = Math.random() * 60 - 30; // -30px to 30px
+                const yOffset = Math.random() * 20;
+                particle.style.left = `${centerX + xOffset}px`;
+                particle.style.top = `${centerY + yOffset}px`;
+                particle.style.backgroundColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
+                document.body.appendChild(particle);
+                
+                const angle = Math.random() * Math.PI - (Math.PI / 2); // Spread particles in 180 degrees upwards
+                const duration = Math.random() * 1.5 + 1; // 1 to 2.5 seconds
+                
+                particle.animate([
+                    { opacity: 1, transform: 'translateY(0) rotate(0deg)' },
+                    { opacity: 0.5, transform: `translate(${Math.cos(angle) * 150}px, ${Math.sin(angle) * 200}px) rotate(360deg)` },
+                    { opacity: 0, transform: `translate(${Math.cos(angle) * 250}px, ${Math.sin(angle) * 400}px) rotate(720deg)` }
+                ], {
+                    duration: duration * 1000,
+                    easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)', 
+                    fill: 'forwards'
+                });
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, duration * 1000);
+            }
+        }
+        
+        /**
+         * Runs the celebration effects repeatedly for 5 seconds when the timer hits zero.
          */
         function triggerCelebration() {
             if (celebrationRun) return;
-
-            // 1. Confetti Burst (Mango Orange and Dark Blue)
-            confetti({
-                particleCount: 150,
-                spread: 120,
-                origin: { y: 0.8 },
-                colors: ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0']
-            });
-
-            // 2. Shake Animation
-            countdownContainerEl.classList.add('shake-animation');
-
-            // 3. Prevent running again
+            clearInterval(celebrationInterval);
+            clearTimeout(celebrationDurationTimeout);
+            
             celebrationRun = true;
-        }
+            
+            // 1. Play the sound immediately
+            playCelebrationTone();
 
+            const run Effects = () => {
+                // 2. Shake Animation
+                countdownContainerEl.classList.remove('shake-animation');
+                void countdownContainerEl.offsetWidth; 
+                countdownContainerEl.classList.add('shake-animation');
+                
+                // 3. Pure JS Particle Effect
+                emitParticles();
+            };
+            
+            runEffects(); 
+            celebrationInterval = setInterval(runEffects, 750); 
+            
+            // Stop the repeating effects after 5 seconds
+            celebrationDurationTimeout = setTimeout(() => {
+                clearInterval(celebrationInterval);
+                celebrationInterval = null;
+            }, 5000); 
+        }
+        
         /**
          * Checks if a given day index is a workday.
          * @param {number} dayIndex - 0 (Sunday) to 6 (Saturday)
@@ -228,10 +317,10 @@
         function isWorkday(dayIndex) {
             return !DAYS_OFF.includes(dayIndex);
         }
-
+        
         /**
          * Calculates the total remaining work seconds until the TARGET_DATE,
-         * only counting time between START_HOUR and END_HOUR on workdays.
+         * only counting time between START_HOUR (8 AM) and END_HOUR (4 PM) on workdays.
          */
         function calculateWorkTimeRemaining(targetTimestamp, startHour, endHour) {
             let totalWorkSeconds = 0;
@@ -239,75 +328,88 @@
             const target = new Date(targetTimestamp);
             
             if (now.getTime() >= targetTimestamp) {
-                return 0;
+                return 0; // Countdown is over
             }
 
-            // 1. Current Day Logic
+            // --- Phase 1: Current Day Logic ---
+            const currentTime = now.getTime();
             const currentDay = now.getDay();
             const isTodayWorkday = isWorkday(currentDay);
-            
+            const isTargetToday = now.toDateString() === target.toDateString();
+
             let workEndToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0).getTime();
             let workStartToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0).getTime();
-            
-            // Start iteration from tomorrow
-            let nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            nextDay.setDate(nextDay.getDate() + 1); 
-            
+
             if (isTodayWorkday) {
-                if (now.getTime() < workStartToday) {
-                    // Case A: Before 8 AM, count the full 8-hour shift remaining today
-                    totalWorkSeconds += SECONDS_PER_WORKDAY;
-                } else if (now.getTime() < workEndToday) {
-                    // Case B: During work hours, count from now until 4 PM
-                    totalWorkSeconds += (workEndToday - now.getTime()) / 1000;
-                }
-                // Case C: After 4 PM, totalWorkSeconds += 0 for today
-            }
-
-            // 2. Intermediate Days and Target Day
-            let currentIter = nextDay;
-            let targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0);
-
-            // Loop day by day, including the target day
-            while (currentIter.getTime() <= targetDay.getTime()) {
-                const iterDayIndex = currentIter.getDay();
-                
-                if (isWorkday(iterDayIndex)) {
+                if (isTargetToday) {
+                    // Target is TODAY: Count time between now and the capped target time (max 4 PM)
+                    let effectiveEnd = Math.min(targetTimestamp, workEndToday);
                     
-                    const isTargetDay = (currentIter.getTime() === targetDay.getTime());
-
-                    if (isTargetDay) {
-                        // Target Day: Count work seconds from 8 AM up to the target time (4 PM).
-                        let targetWorkStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), startHour, 0, 0).getTime();
-                        
-                        // We only count time that falls within the 8 AM - 4 PM window
-                        if (targetTimestamp > targetWorkStart) {
-                             totalWorkSeconds += (targetTimestamp - targetWorkStart) / 1000;
+                    if (currentTime < workStartToday) {
+                        // Before 8 AM: Count from 8 AM up to effective end time.
+                        if (effectiveEnd > workStartToday) {
+                            totalWorkSeconds += (effectiveEnd - workStartToday) / 1000;
                         }
-
-                    } else {
-                        // Full Workday: Add the full 8 hours of work time
+                    } else if (currentTime < effectiveEnd) {
+                        // During work hours: Count from now up to effective end time.
+                        totalWorkSeconds += (effectiveEnd - currentTime) / 1000;
+                    }
+                } else { 
+                    // Target is a FUTURE date: Count work time remaining TODAY.
+                    if (currentTime < workStartToday) {
+                        // Before 8 AM: Count the full 8-hour shift remaining today
                         totalWorkSeconds += SECONDS_PER_WORKDAY;
+                    } else if (currentTime < workEndToday) {
+                        // During work hours: Count from now until 4 PM
+                        totalWorkSeconds += (workEndToday - currentTime) / 1000;
                     }
                 }
-                
-                // Stop iterating once we have handled the target day
-                if (currentIter.getTime() === targetDay.getTime()) break;
-                
-                // Move to the next day
-                currentIter.setDate(currentIter.getDate() + 1);
+            }
+
+            if (isTargetToday) {
+                 return Math.max(0, Math.floor(totalWorkSeconds));
             }
             
-            // Ensure result is non-negative and return integer seconds
+            // --- Phase 2: Full Days Between Current Day and Target Day ---
+            
+            let startIterDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            startIterDay.setDate(startIterDay.getDate() + 1); 
+
+            let currentIter = startIterDay;
+            let targetDayMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0).getTime();
+
+            while (currentIter.getTime() < targetDayMidnight) { 
+                const iterDayIndex = currentIter.getDay();
+                if (isWorkday(iterDayIndex)) {
+                    totalWorkSeconds += SECONDS_PER_WORKDAY;
+                }
+                currentIter.setDate(currentIter.getDate() + 1);
+            }
+
+            // --- Phase 3: Target Day Logic ---
+            const targetDayIndex = target.getDay();
+
+            if (isWorkday(targetDayIndex)) {
+                let targetWorkStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), startHour, 0, 0).getTime();
+                let targetWorkEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate(), endHour, 0, 0).getTime();
+
+                // Effective end time is the earlier of the actual target time (18:38) or the work end time (4 PM).
+                let effectiveTargetTime = Math.min(targetTimestamp, targetWorkEnd);
+
+                if (effectiveTargetTime > targetWorkStart) {
+                    totalWorkSeconds += (effectiveTargetTime - targetWorkStart) / 1000;
+                }
+            }
+            
             return Math.max(0, Math.floor(totalWorkSeconds));
         }
-
+        
         function formatTime(time) {
-            return time < 10 ? '0' + time : time;
+            const roundedTime = Math.floor(time);
+            return roundedTime < 10 ? '0' + roundedTime : roundedTime;
         }
-
+        
         function updateCountdown() {
-            // Get the total number of work seconds remaining
             const totalWorkSeconds = calculateWorkTimeRemaining(TARGET_DATE, START_HOUR, END_HOUR);
             
             if (totalWorkSeconds <= 0) {
@@ -318,39 +420,46 @@
                 minutesEl.textContent = '00';
                 secondsEl.textContent = '00';
                 
-                // --- UPDATED MESSAGE HERE ---
-                expiryMessageEl.textContent = 'FREEEEEDOMMM!';
+                // Show the fancy message
+                expiryMessageEl.innerHTML = `
+                    <span 
+                        class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
+                               bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
+                               fancy-pulse">
+                        FREEEEEDOMMM!
+                    </span>
+                `;
+                
                 expiryMessageEl.classList.remove('hidden');
                 document.getElementById('timer-display').classList.add('opacity-50');
                 
-                triggerCelebration(); // <-- Trigger the fun!
+                // Trigger effects including sound!
+                triggerCelebration(); 
                 return;
             }
-
-            // 1. Calculate full 8-hour workdays (shifts)
+            
             const workdays = Math.floor(totalWorkSeconds / SECONDS_PER_WORKDAY);
             let remainingSeconds = totalWorkSeconds % SECONDS_PER_WORKDAY;
             
-            // 2. Calculate remaining hours (within the final 8-hour shift)
             const hours = Math.floor(remainingSeconds / 3600);
             remainingSeconds %= 3600;
             
-            // 3. Calculate remaining minutes
             const minutes = Math.floor(remainingSeconds / 60);
             
-            // 4. Calculate remaining seconds
             const seconds = remainingSeconds % 60;
-
-            // Update the display elements
+            
             daysEl.textContent = workdays;
             hoursEl.textContent = formatTime(hours);
             minutesEl.textContent = formatTime(minutes);
             secondsEl.textContent = formatTime(seconds);
         }
-
-        // Run the function once immediately and then start the interval
-        updateCountdown();
-        const countdownInterval = setInterval(updateCountdown, 1000);
+        
+        let countdownInterval;
+        
+        window.onload = function() {
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
     </script>
 </body>
 </html>
