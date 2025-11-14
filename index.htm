@@ -1,4 +1,4 @@
-<!--Mango Mango Countdown - Netlify-->
+<!--Mango Mango Countdown Temp-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,6 +8,8 @@
     <title>Mango Mango Countdown</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Custom styles for the Inter font and consistent box sizing */
         body {
@@ -31,7 +33,7 @@
             height: 100%;
             z-index: -1;
             /* Background Image Application - YOUR WORKING SNOOPY URL */
-            background-image: url('https://lh3.googleusercontent.com/o1E7fmEuwPrUMVFWMtvoOwkiAO3Tz9c2CipCJP3zOdL1vGM4dXqF4MskTjCOyE9XIVzKJrnioqluBxKO0f5fFcg');
+            background-image: url('https://lh5.googleusercontent.com/Jm8SW9ZXOInTtMUiPpvkv8-gW814L9Jk9aSVNiGJCPdhmEq2c0NKSkcYg8hd6cY_IMgRgq8bqxFP4K_NxkFmFII');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -189,6 +191,9 @@
         const secondsEl = document.getElementById('seconds');
         const expiryMessageEl = document.getElementById('expiry-message');
         const countdownContainerEl = document.getElementById('countdown-container');
+
+        // Global variable for the Tone.js synth
+        let synth = null;
         
         // Flag and intervals for the celebration effects
         let celebrationRun = false;
@@ -197,6 +202,38 @@
         
         // Colors for the pure JS confetti
         const PARTICLE_COLORS = ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0'];
+
+        /**
+         * Initializes and plays a celebratory chime using Tone.js.
+         */
+        function playCelebrationTone() {
+            // Check if the Tone context is suspended and resume it (required by browsers)
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+
+            if (synth === null) {
+                // Initialize the synth (PolySynth for a chord)
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" }, // Use sine wave for a clean chime
+                    envelope: {
+                        attack: 0.05,
+                        decay: 0.3,
+                        sustain: 0.0,
+                        release: 0.5
+                    }
+                }).toDestination();
+            }
+            
+            // Play a bright, celebratory chord (e.g., C major)
+            const now = Tone.now();
+            
+            // Schedule the notes (C5, E5, G5) - 8th note duration
+            synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+            
+            // Schedule a slightly higher, shorter chime (C6) right after for a "sparkle" effect
+            synth.triggerAttackRelease(["C6"], "16n", now + 0.1); 
+        }
         
         /**
          * Pure JavaScript/CSS Confetti Emitter
@@ -250,13 +287,16 @@
             
             celebrationRun = true;
             
-            const runEffects = () => {
-                // 1. Shake Animation
+            // 1. Play the sound immediately
+            playCelebrationTone();
+
+            const run Effects = () => {
+                // 2. Shake Animation
                 countdownContainerEl.classList.remove('shake-animation');
                 void countdownContainerEl.offsetWidth; 
                 countdownContainerEl.classList.add('shake-animation');
                 
-                // 2. Pure JS Particle Effect
+                // 3. Pure JS Particle Effect
                 emitParticles();
             };
             
@@ -380,7 +420,7 @@
                 minutesEl.textContent = '00';
                 secondsEl.textContent = '00';
                 
-                // === FANCY UPDATE (Mobile Optimized) ===
+                // Show the fancy message
                 expiryMessageEl.innerHTML = `
                     <span 
                         class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
@@ -389,11 +429,11 @@
                         FREEEEEDOMMM!
                     </span>
                 `;
-                // ======================================
                 
                 expiryMessageEl.classList.remove('hidden');
                 document.getElementById('timer-display').classList.add('opacity-50');
                 
+                // Trigger effects including sound!
                 triggerCelebration(); 
                 return;
             }
