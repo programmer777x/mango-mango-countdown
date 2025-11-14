@@ -3,256 +3,566 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synthesized Timer Alarm</title>
+    <title>Mango Mango Countdown</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Inter Font -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght00;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-    </style>
-    <!-- Load Tone.js -->
+    <!-- Load Tone.js for sound effects (Re-added for celebration) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Custom styles for the Inter font and consistent box sizing */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f7f7f7;
+            filter: none !important; 
+        }
+        /* --- DEDICATED BACKGROUND LAYER (Ensures filter doesn't affect content) --- */
+        #background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* Background Image Application - Using the URL from your last request */
+            background-image: url('https://raw.githubusercontent.com/programmer777x/mango-mango-countdown/main/Anime%20Chibi%20Congratulations%206%20-%20Adjusted.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            /* Filter Applied ONLY to the background layer */
+            filter: brightness(1.1) opacity(1.0); 
+        }
+        /* Main wrapper now aligns content to the bottom (as per your request) */
+        #main-wrapper {
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            /* Align to the bottom */
+            align-items: flex-end; 
+            /* PUSHED DOWN MORE: Increased padding to 15vh */
+            padding-bottom: 15vh; 
+            filter: none !important; 
+        }
+        /* Countdown Card Container */
+        #countdown-container {
+            /* FADED MORE: Reduced opacity to 0.5 (more transparent, as per your request) */
+            background-color: rgba(255, 255, 255, 0.5); 
+            backdrop-filter: blur(5px); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); 
+            transition: all 0.3s ease-in-out;
+            position: relative; 
+        }
+        /* Keyframes for the shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        /* Class to apply the shake animation */
+        .shake-animation {
+            animation: shake 0.4s ease-in-out 3; 
+        }
+        /* Confetti particle style (Pure CSS/JS) */
+        .confetti-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #F6AD55; /* Mango color */
+            border-radius: 2px;
+            opacity: 0;
+            z-index: 1000;
+        }
+        /* Custom class for the time unit cards */
+        .time-card {
+            background-color: #2D3748; 
+            color: #E2E8F0; 
+            padding: 1rem 0.5rem;
+            border-radius: 0.75rem; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            min-width: 60px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            flex-grow: 1;
+        }
+        .time-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .time-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #F6AD55; /* Mango/Orange color */
+        }
+        .time-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.5rem;
+            color: #A0AEC0; 
+        }
+        /* Responsive adjustments */
+        @media (min-width: 640px) {
+            .time-value {
+                font-size: 3rem;
+            }
+            .time-label {
+                font-size: 0.875rem;
+            }
+        }
+        #timer-display {
+            gap: 0.5rem;
+        }
+        @media (min-width: 640px) {
+            #timer-display {
+                gap: 1rem;
+            }
+        }
+        /* Keyframes for a custom subtle pulse used on the celebration text */
+        @keyframes vibrant-pulse {
+          0%, 100% { text-shadow: 0 0 5px rgba(255, 165, 0, 0.5); }
+          50% { text-shadow: 0 0 10px rgba(255, 200, 0, 0.8), 0 0 15px rgba(255, 100, 0, 0.5); }
+        }
+        .fancy-pulse {
+            animation: vibrant-pulse 2s infinite alternate;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
-
-    <div id="timer-card" class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-lg text-center transform transition-all duration-300">
-        
-        <!-- VERSION NUMBER UPDATED HERE -->
-        <h1 class="text-4xl font-extrabold text-indigo-700 mb-6 tracking-tight flex justify-center items-center space-x-3">
-            <span>Focus Timer</span>
-            <span class="text-xs font-medium text-gray-400 bg-indigo-100 px-2 py-0.5 rounded-full">v1.3</span>
-        </h1>
-
-        <!-- Timer Display -->
-        <div class="text-7xl font-mono font-bold text-gray-900 mb-8 p-4 bg-indigo-50 rounded-xl shadow-inner">
-            <span id="display-minutes">00</span>:<span id="display-seconds">00</span>
-        </div>
-
-        <!-- Input and Controls -->
-        <div class="space-y-4">
-            <div class="flex space-x-4">
-                <input type="number" id="minutes-input" value="1" min="1" max="60"
-                       class="flex-1 p-3 border-2 border-indigo-200 rounded-lg text-lg text-center focus:outline-none focus:border-indigo-500 transition duration-150"
-                       placeholder="Minutes">
-                <input type="number" id="seconds-input" value="0" min="0" max="59"
-                       class="flex-1 p-3 border-2 border-indigo-200 rounded-lg text-lg text-center focus:outline-none focus:border-indigo-500 transition duration-150"
-                       placeholder="Seconds">
+<body>
+    <div id="background-overlay"></div>
+    <div id="main-wrapper">
+        <!-- Countdown Container -->
+        <div id="countdown-container" class="w-full max-w-xl mx-auto text-center p-6 rounded-xl shadow-2xl border border-gray-100">
+            <!-- HEADING ADJUSTMENT: Changed text-2xl to text-xl for small screen single-line fit -->
+            <h1 class="text-xl sm:text-3xl font-extrabold text-gray-800 mb-6 tracking-tight">
+                🥭 Mango Mango Countdown 🥭
+            </h1>
+            <!-- The Countdown Display -->
+            <div id="timer-display" class="flex justify-center">
+                <div class="time-card">
+                    <span id="days" class="time-value">00</span>
+                    <span class="time-label">Workdays</span>
+                </div>
+                <div class="time-card">
+                    <span id="hours" class="time-value">00</span>
+                    <span class="time-label">Hours</span>
+                </div>
+                <div class="time-card">
+                    <span id="minutes" class="time-value">00</span>
+                    <span class="time-label">Mins</span>
+                </div>
+                <div class="time-card">
+                    <span id="seconds" class="time-value">00</span>
+                    <span class="time-label">Secs</span>
+                </div>
             </div>
-
-            <div class="flex space-x-3">
-                <button id="start-button"
-                        class="flex-1 py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.01] disabled:opacity-50">
-                    Start Timer
-                </button>
-                <button id="reset-button"
-                        class="py-3 px-6 bg-gray-300 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-400 transition duration-150 transform hover:scale-[1.01]">
-                    Reset
-                </button>
+            <!-- Expiry Message Container -->
+            <div id="expiry-message" class="mt-8 text-xl font-semibold text-green-600 hidden">
+                <!-- Message displayed when the timer hits zero -->
             </div>
         </div>
-        
-        <!-- Status Message -->
-        <div id="status-message" class="mt-6 text-sm text-gray-600 h-5"></div>
-
-        <!-- Custom Modal for Alert -->
-        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div class="bg-white p-8 rounded-xl shadow-2xl text-center w-full max-w-sm">
-                <h3 class="text-2xl font-bold text-red-600 mb-4">Time's Up! Congratulations!</h3>
-                <p id="modal-text" class="text-lg text-gray-700 mb-6">Your 5-second celebratory chime is playing!</p>
-                <button id="modal-close-button" class="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-150">
-                    Stop & Close
-                </button>
-            </div>
+    </div>
+    
+    <!-- Floating Audio Enable Prompt (Re-added) -->
+    <div id="audio-prompt-message" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex justify-center items-center p-4 z-50 hidden">
+        <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg shadow-2xl text-center max-w-sm">
+            <p class="font-bold text-lg mb-2">🔊 Audio Blocked</p>
+            <p class="text-sm">Click anywhere on the screen to enable the celebratory sound!</p>
         </div>
     </div>
 
     <script>
-        const displayMinutes = document.getElementById('display-minutes');
-        const displaySeconds = document.getElementById('display-seconds');
-        const minutesInput = document.getElementById('minutes-input');
-        const secondsInput = document.getElementById('seconds-input');
-        const startButton = document.getElementById('start-button');
-        const resetButton = document.getElementById('reset-button');
-        const statusMessage = document.getElementById('status-message');
-        const modal = document.getElementById('modal');
-        const modalCloseButton = document.getElementById('modal-close-button');
+        // --- CONFIGURATION ---
+        // Target date from your last provided code
+        const TARGET_DATE = new Date("November 30, 2025 16:00:00").getTime();
+        
+        // Working Schedule
+        const DAYS_OFF = [1, 4]; // Monday (1) and Thursday (4)
+        const START_HOUR = 8; // 8 AM
+        const END_HOUR = 16;  // 4 PM (24-hour format)
+        const SECONDS_PER_WORKDAY = (END_HOUR - START_HOUR) * 3600;
+        
+        // DOM Elements
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const expiryMessageEl = document.getElementById('expiry-message');
+        const countdownContainerEl = document.getElementById('countdown-container');
+        const audioPromptEl = document.getElementById('audio-prompt-message'); // Re-added
 
-        let intervalId = null;
-        let totalSeconds = 0;
-        let isRunning = false;
-        let synth = null; // Tone.js PluckSynth instance
-        let reverb = null; // Tone.js Reverb instance
+        // Global variables for the Tone.js synth and effects
+        let synth = null;
+        let reverb = null; // NEW: Reverb added for spaciousness
+        
+        // Flag and intervals for the celebration effects
+        let celebrationRun = false;
+        let celebrationInterval = null;
+        let celebrationDurationTimeout = null;
+        
+        // Colors for the pure JS confetti
+        const PARTICLE_COLORS = ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0'];
 
-        // --- Tone.js Setup ---
-        function setupAudio() {
-            // A PluckSynth is ideal for bell, chime, or guitar-like sounds.
-            synth = new Tone.PluckSynth().toDestination();
+        // --- AUDIO ENABLE LOGIC (Re-added) ---
+        let audioContextEnabled = false;
+
+        /**
+         * Attaches a single-use listener to the document to resume the audio context.
+         */
+        function enableAudioContext() {
+            if (audioContextEnabled || Tone.context.state === 'running') return;
             
-            // Add a spacious reverb effect to give the chime depth
-            reverb = new Tone.Reverb({
-                decay: 2, // Longer decay for a lingering sound
-                preDelay: 0.01,
-            }).toDestination();
-            
-            // Connect synth to the reverb and then to the main output
-            synth.connect(reverb);
+            // Attempt to resume/start the audio context on the first user interaction
+            Tone.context.resume().then(() => {
+                audioContextEnabled = true;
+                // Hide the prompt message
+                audioPromptEl.classList.add('hidden');
+                
+                // If the celebration already started (but silently), play the sound now
+                if (celebrationRun) {
+                    _actuallyPlayTone(); // Force play once enabled
+                }
+            }).catch(e => {
+                console.error("Failed to resume AudioContext:", e);
+            });
         }
         
-        // This function plays the celebratory sound for ~5 seconds
-        function playAlarm() {
-            // First, ensure audio context is running
-            if (Tone.context.state !== 'running') {
-                Tone.start();
-                statusMessage.textContent = "Audio context started!";
-            }
-            
-            // The repeating melody notes (C Major arpeggio and scale pattern)
-            const notes = ["C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4"];
+        // Attach the listener to the whole document for maximum click capture
+        document.addEventListener('click', enableAudioContext, { once: true });
+        document.addEventListener('touchstart', enableAudioContext, { once: true });
+
+
+        /**
+         * Schedules the 5-second celebratory tone sequence using Tone.Transport.
+         */
+        function _scheduleAlarm() {
+            // Stop any previous transport events before scheduling new ones
+            Tone.Transport.stop(); 
+            Tone.Transport.cancel(); 
+
+            // Notes for the 5-second C Major arpeggio pattern
+            const notes = ["C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4", "E4", "G4", "C5", "B4", "A4", "G4", "F4", "E4", "D4"];
             const alarmDurationSeconds = 5.0; 
-            const noteInterval = "8n"; // Each note plays on an 8th note interval (faster than quarter notes)
+            const noteInterval = "8n"; 
             
-            // Calculate how many 8th notes fit into the 5-second duration
-            // This ensures the loop stops precisely on time.
-            const totalScheduledNotes = Math.floor(alarmDurationSeconds / Tone.Time(noteInterval).toSeconds());
+            // Calculate how many intervals fit into the 5-second duration
+            const intervalSeconds = Tone.Time(noteInterval).toSeconds();
+            const totalScheduledNotes = Math.floor(alarmDurationSeconds / intervalSeconds);
             
-            // Schedule all the notes using Tone.Transport
+            // Schedule all the notes
             for (let i = 0; i < totalScheduledNotes; i++) {
-                const time = Tone.Time(noteInterval).toSeconds() * i; // Calculate the time offset
+                const time = intervalSeconds * i; 
                 const note = notes[i % notes.length];
                 
-                // Schedule the note
+                // Use 16th note duration for the pluck, to give it space
                 Tone.Transport.scheduleOnce((t) => {
                     synth.triggerAttackRelease(note, "16n", t);
                 }, time);
             }
             
-            // Schedule a final, sustained chord (C Major) immediately after the last note finishes
+            // Schedule a final, sustained chord (C Major) immediately after the loop ends
             Tone.Transport.scheduleOnce((t) => {
                 synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "1n", t); 
-            }, Tone.Time(noteInterval).toSeconds() * totalScheduledNotes);
+            }, intervalSeconds * totalScheduledNotes);
 
 
             // Start the transport (the global clock)
             Tone.Transport.start();
             
-            // Schedule the transport to stop after the entire sequence has finished, plus a 1-second buffer for the final chord to decay.
+            // Schedule the transport to stop after the entire sequence has finished (5 seconds + 1s decay)
             Tone.Transport.scheduleOnce(() => {
                 Tone.Transport.stop();
+                synth.releaseAll(); // Release any lingering notes
             }, alarmDurationSeconds + 1); 
         }
 
-        // This function stops the sound
-        function stopAlarm() {
-            // Stop the main transport and release active notes
-            Tone.Transport.stop();
-            synth.releaseAll();
-        }
-
-        // Initialize audio on load
-        setupAudio();
-
-
-        function updateDisplay() {
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            displayMinutes.textContent = String(minutes).padStart(2, '0');
-            displaySeconds.textContent = String(seconds).padStart(2, '0');
-        }
-
-        function startTimer() {
-            if (isRunning) return;
-
-            const inputMinutes = parseInt(minutesInput.value) || 0;
-            const inputSeconds = parseInt(secondsInput.value) || 0;
+        /**
+         * Initializes audio components and triggers the alarm sequence.
+         */
+        function _actuallyPlayTone() {
+            if (synth === null) {
+                // NEW: Initialize PluckSynth for the chime effect
+                synth = new Tone.PluckSynth({
+                    attackNoise: 1, 
+                    dampening: 4000, 
+                    resonance: 0.95 
+                }).toDestination();
+                
+                // NEW: Add Reverb for spaciousness
+                reverb = new Tone.Reverb({
+                    decay: 2, 
+                    preDelay: 0.01,
+                }).toDestination();
+                
+                synth.connect(reverb);
+            }
             
-            const initialSeconds = (inputMinutes * 60) + inputSeconds;
+            // Ensure audio context is running before scheduling
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume().then(() => {
+                    _scheduleAlarm();
+                    audioContextEnabled = true;
+                }).catch(() => {
+                    audioPromptEl.classList.remove('hidden');
+                });
+            } else {
+                _scheduleAlarm();
+                audioPromptEl.classList.add('hidden');
+            }
+        }
 
-            if (initialSeconds <= 0) {
-                statusMessage.textContent = "Please set a time greater than zero.";
+        /**
+         * Initializes and plays a celebratory chime using Tone.js, checking context state.
+         * Note: This function now relies on _actuallyPlayTone to handle the 5-second scheduling.
+         */
+        function playCelebrationTone() {
+            _actuallyPlayTone();
+        }
+
+        /**
+         * Pure JavaScript/CSS Confetti Emitter
+         */
+        function emitParticles() {
+            if (!countdownContainerEl) return;
+            
+            const numParticles = 30;
+            const containerRect = countdownContainerEl.getBoundingClientRect();
+            
+            // Emit particles from the bottom center of the card
+            const centerX = containerRect.left + containerRect.width / 2;
+            const centerY = containerRect.top + countdownContainerEl.offsetHeight; 
+            
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('confetti-particle');
+                
+                const xOffset = Math.random() * 60 - 30; // -30px to 30px horizontal spread
+                const yOffset = Math.random() * 20;
+                
+                particle.style.left = `${centerX + xOffset}px`;
+                particle.style.top = `${centerY + yOffset}px`;
+                
+                particle.style.backgroundColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
+                document.body.appendChild(particle);
+                
+                const angle = Math.random() * Math.PI - (Math.PI / 2); // Spread particles in 180 degrees upwards
+                const duration = Math.random() * 1.5 + 1; // 1 to 2.5 seconds
+                
+                particle.animate([
+                    { opacity: 1, transform: 'translateY(0) rotate(0deg)' },
+                    { opacity: 0.5, transform: `translate(${Math.cos(angle) * 150}px, ${Math.sin(angle) * 200}px) rotate(360deg)` },
+                    { opacity: 0, transform: `translate(${Math.cos(angle) * 250}px, ${Math.sin(angle) * 400}px) rotate(720deg)` }
+                ], {
+                    duration: duration * 1000,
+                    easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)', 
+                    fill: 'forwards'
+                });
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, duration * 1000);
+            }
+        }
+        
+        /**
+         * Runs the celebration effects repeatedly for 5 seconds when the timer hits zero.
+         */
+        function triggerCelebration() {
+            if (celebrationRun) return;
+            clearInterval(celebrationInterval);
+            clearTimeout(celebrationDurationTimeout);
+            
+            celebrationRun = true;
+            
+            // 1. Play the sound (will attempt to resume context or show prompt)
+            playCelebrationTone();
+
+            const runEffects = () => {
+                // 2. Shake Animation
+                countdownContainerEl.classList.remove('shake-animation');
+                void countdownContainerEl.offsetWidth; 
+                countdownContainerEl.classList.add('shake-animation');
+                
+                // 3. Pure JS Particle Effect
+                emitParticles();
+                
+                // If audio isn't running, pulse the text as a visual cue/reminder
+                if (Tone.context.state !== 'running') {
+                    expiryMessageEl.classList.add('fancy-pulse');
+                } else {
+                    expiryMessageEl.classList.remove('fancy-pulse');
+                }
+            };
+            
+            runEffects(); 
+            // Repeat the effects every 750ms
+            celebrationInterval = setInterval(runEffects, 750); 
+            
+            // Stop the repeating visual effects after 5 seconds
+            celebrationDurationTimeout = setTimeout(() => {
+                clearInterval(celebrationInterval);
+                celebrationInterval = null;
+                expiryMessageEl.classList.remove('fancy-pulse');
+            }, 5000); 
+        }
+        
+        /**
+         * Checks if a given day index is a workday.
+         */
+        function isWorkday(dayIndex) {
+            return !DAYS_OFF.includes(dayIndex);
+        }
+        
+        /**
+         * Calculates the total remaining work seconds until the TARGET_DATE.
+         */
+        function calculateWorkTimeRemaining(targetTimestamp, startHour, endHour) {
+            let totalWorkSeconds = 0;
+            const now = new Date();
+            const target = new Date(targetTimestamp);
+            
+            if (now.getTime() >= targetTimestamp) {
+                return 0; // Countdown is over
+            }
+
+            // --- Phase 1: Current Day Logic ---
+            const currentTime = now.getTime();
+            const currentDay = now.getDay();
+            const isTodayWorkday = isWorkday(currentDay);
+            const isTargetToday = now.toDateString() === target.toDateString();
+
+            let workEndToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0).getTime();
+            let workStartToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0).getTime();
+
+            if (isTodayWorkday) {
+                if (isTargetToday) {
+                    let effectiveEnd = Math.min(targetTimestamp, workEndToday);
+                    
+                    if (currentTime < workStartToday) {
+                        if (effectiveEnd > workStartToday) {
+                            totalWorkSeconds += (effectiveEnd - workStartToday) / 1000;
+                        }
+                    } else if (currentTime < effectiveEnd) {
+                        totalWorkSeconds += (effectiveEnd - currentTime) / 1000;
+                    }
+                } else { 
+                    if (currentTime < workStartToday) {
+                        totalWorkSeconds += SECONDS_PER_WORKDAY;
+                    } else if (currentTime < workEndToday) {
+                        totalWorkSeconds += (workEndToday - currentTime) / 1000;
+                    }
+                }
+            }
+
+            if (isTargetToday) {
+                return Math.max(0, Math.floor(totalWorkSeconds));
+            }
+            
+            // --- Phase 2 & 3: Full Days and Target Day Logic ---
+            
+            let startIterDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            startIterDay.setDate(startIterDay.getDate() + 1); 
+
+            let currentIter = startIterDay;
+            let targetDayMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0).getTime();
+
+            while (currentIter.getTime() < targetDayMidnight) { 
+                const iterDayIndex = currentIter.getDay();
+                if (isWorkday(iterDayIndex)) {
+                    totalWorkSeconds += SECONDS_PER_WORKDAY;
+                }
+                currentIter.setDate(currentIter.getDate() + 1);
+            }
+
+            const targetDayIndex = target.getDay();
+
+            if (isWorkday(targetDayIndex)) {
+                let targetWorkStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), startHour, 0, 0).getTime();
+                let targetWorkEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate(), endHour, 0, 0).getTime();
+
+                let effectiveTargetTime = Math.min(targetTimestamp, targetWorkEnd);
+
+                if (effectiveTargetTime > targetWorkStart) {
+                    totalWorkSeconds += (effectiveTargetTime - targetWorkStart) / 1000;
+                }
+            }
+            
+            return Math.max(0, Math.floor(totalWorkSeconds));
+        }
+        
+        function formatTime(time) {
+            const roundedTime = Math.floor(time);
+            return roundedTime < 10 ? '0' + roundedTime : roundedTime;
+        }
+        
+        function updateCountdown() {
+            const totalWorkSeconds = calculateWorkTimeRemaining(TARGET_DATE, START_HOUR, END_HOUR);
+            
+            if (totalWorkSeconds <= 0) {
+                // Countdown is over
+                clearInterval(countdownInterval);
+                daysEl.textContent = '0';
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = '00';
+                
+                // Show the fancy message
+                expiryMessageEl.innerHTML = `
+                    <span 
+                        class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
+                            bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
+                            fancy-pulse">
+                        FREEEEEDOMMM!
+                    </span>
+                `;
+                
+                expiryMessageEl.classList.remove('hidden');
+                document.getElementById('timer-display').classList.add('opacity-50'); 
+                
+                // Trigger effects automatically!
+                triggerCelebration(); 
                 return;
             }
-
-            totalSeconds = initialSeconds;
-            updateDisplay();
-
-            isRunning = true;
-            startButton.textContent = 'Pause';
-            statusMessage.textContent = 'Timer running...';
             
-            // Disable inputs while running
-            minutesInput.disabled = true;
-            secondsInput.disabled = true;
-
-            intervalId = setInterval(() => {
-                totalSeconds--;
-                updateDisplay();
-
-                if (totalSeconds <= 0) {
-                    clearInterval(intervalId);
-                    isRunning = false;
-                    startButton.textContent = 'Start Timer';
-                    statusMessage.textContent = 'Time completed! Congratulations!';
-                    
-                    // --- Alarm Trigger ---
-                    playAlarm();
-                    
-                    // Show custom modal
-                    modal.classList.remove('hidden');
-                }
-            }, 1000);
-        }
-
-        function pauseTimer() {
-            if (!isRunning) return;
-            clearInterval(intervalId);
-            isRunning = false;
-            startButton.textContent = 'Resume';
-            statusMessage.textContent = 'Timer paused.';
-        }
-
-        function resumeTimer() {
-            startTimer(); // The startTimer function handles resuming logic since totalSeconds is preserved
-        }
-
-        function resetTimer() {
-            clearInterval(intervalId);
-            totalSeconds = 0;
-            isRunning = false;
-            startButton.textContent = 'Start Timer';
-            statusMessage.textContent = 'Ready to set time.';
+            const workdays = Math.floor(totalWorkSeconds / SECONDS_PER_WORKDAY);
+            let remainingSeconds = totalWorkSeconds % SECONDS_PER_WORKDAY;
             
-            // Re-enable inputs
-            minutesInput.disabled = false;
-            secondsInput.disabled = false;
-
-            // Reset inputs to default 1:00
-            minutesInput.value = 1;
-            secondsInput.value = 0;
+            const hours = Math.floor(remainingSeconds / 3600);
+            remainingSeconds %= 3600;
             
-            updateDisplay();
+            const minutes = Math.floor(remainingSeconds / 60);
+            
+            const seconds = remainingSeconds % 60;
+            
+            daysEl.textContent = workdays;
+            hoursEl.textContent = formatTime(hours);
+            minutesEl.textContent = formatTime(minutes);
+            secondsEl.textContent = formatTime(seconds);
         }
-
-        // Event Listeners
-        startButton.addEventListener('click', () => {
-            if (isRunning) {
-                pauseTimer();
-            } else if (totalSeconds > 0) {
-                resumeTimer();
+        
+        let countdownInterval;
+        
+        window.onload = function() {
+            updateCountdown();
+            // Start the interval only if the celebration hasn't started yet (for future runs)
+            // The condition below ensures that if the target is in the past, we trigger celebration immediately.
+            if (TARGET_DATE < Date.now() && calculateWorkTimeRemaining(TARGET_DATE, START_HOUR, END_HOUR) === 0) {
+                triggerCelebration(); 
             } else {
-                startTimer();
+                countdownInterval = setInterval(updateCountdown, 1000);
             }
-        });
-
-        resetButton.addEventListener('click', resetTimer);
-
-        modalCloseButton.addEventListener('click', () => {
-            stopAlarm();
-            modal.classList.add('hidden');
-        });
-
-        // Initialize display
-        resetTimer();
+        }
     </script>
 </body>
 </html>
