@@ -6,8 +6,6 @@
     <title>Mango Mango Countdown</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Tone.js for sound effects -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Custom styles for the Inter font and consistent box sizing */
         body {
@@ -31,7 +29,7 @@
             height: 100%;
             z-index: -1;
             /* Background Image Application - YOUR WORKING SNOOPY URL */
-            background-image: url('https://lh5.googleusercontent.com/Jm8SW9ZXOInTtMUiPpvkv8-gW814L9Jk9aSVNiGJCPdhmEq2c0NKSkcYg8hd6cY_IMgRgq8bqxFP4K_NxkFmFII');
+            background-image: url('https://lh3.googleusercontent.com/o1E7fmEuwPrUMVFWMtvoOwkiAO3Tz9c2CipCJP3zOdL1vGM4dXqF4MskTjCOyE9XIVzKJrnioqluBxKO0f5fFcg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -174,9 +172,7 @@
     </div>
     <script>
         // --- CONFIGURATION ---
-        // NOTE: The current date is Nov 14, 2025, which is AFTER the target date of Nov 13, 2025.
-        // This ensures the timer starts in the expired state.
-        const TARGET_DATE = new Date("November 13, 2025 12:00:00").getTime(); 
+        const TARGET_DATE = new Date("November 30, 2025 16:00:00").getTime();
         
         // Working Schedule
         const DAYS_OFF = [1, 4]; // Monday (1) and Thursday (4)
@@ -191,9 +187,6 @@
         const secondsEl = document.getElementById('seconds');
         const expiryMessageEl = document.getElementById('expiry-message');
         const countdownContainerEl = document.getElementById('countdown-container');
-
-        // Global variable for the Tone.js synth
-        let synth = null;
         
         // Flag and intervals for the celebration effects
         let celebrationRun = false;
@@ -202,39 +195,6 @@
         
         // Colors for the pure JS confetti
         const PARTICLE_COLORS = ['#F6AD55', '#2D3748', '#FFCC00', '#A0AEC0'];
-
-        /**
-         * Initializes and plays a celebratory chime using Tone.js.
-         * MUST be called inside a function triggered by a user action (e.g., click).
-         */
-        function playCelebrationTone() {
-            // Check if the Tone context is suspended and resume it (required by browsers)
-            if (Tone.context.state !== 'running') {
-                Tone.context.resume();
-            }
-
-            if (synth === null) {
-                // Initialize the synth (PolySynth for a chord)
-                synth = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: "sine" }, // Use sine wave for a clean chime
-                    envelope: {
-                        attack: 0.05,
-                        decay: 0.3,
-                        sustain: 0.0,
-                        release: 0.5
-                    }
-                }).toDestination();
-            }
-            
-            // Play a bright, celebratory chord (e.g., C major)
-            const now = Tone.now();
-            
-            // Schedule the notes (C5, E5, G5) - 8th note duration
-            synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
-            
-            // Schedule a slightly higher, shorter chime (C6) right after for a "sparkle" effect
-            synth.triggerAttackRelease(["C6"], "16n", now + 0.1); 
-        }
         
         /**
          * Pure JavaScript/CSS Confetti Emitter
@@ -245,39 +205,30 @@
             const numParticles = 30;
             const containerRect = countdownContainerEl.getBoundingClientRect();
             
-            // Emit particles from the center bottom of the countdown card
             const centerX = containerRect.left + containerRect.width / 2;
-            // Place particles slightly above the bottom of the countdown card
-            const centerY = containerRect.top + containerRect.height - 10; 
+            const centerY = containerRect.top + countdownContainerEl.offsetHeight; 
             
             for (let i = 0; i < numParticles; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('confetti-particle');
                 
-                const xOffset = Math.random() * 60 - 30; // -30px to 30px horizontal spread
+                const xOffset = Math.random() * 60 - 30; // -30px to 30px
                 const yOffset = Math.random() * 20;
-                
-                // Set initial position relative to the document
                 particle.style.left = `${centerX + xOffset}px`;
                 particle.style.top = `${centerY + yOffset}px`;
-                
                 particle.style.backgroundColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
                 document.body.appendChild(particle);
                 
-                // Angle between -180 and 0 degrees (upward spray)
-                const angle = Math.random() * Math.PI - (Math.PI / 2); 
+                const angle = Math.random() * Math.PI - (Math.PI / 2); // Spread particles in 180 degrees upwards
                 const duration = Math.random() * 1.5 + 1; // 1 to 2.5 seconds
                 
-                // Keyframe animation for movement
                 particle.animate([
                     { opacity: 1, transform: 'translateY(0) rotate(0deg)' },
-                    // Shoot outwards and upwards
-                    { opacity: 0.5, transform: `translate(${Math.cos(angle) * 150}px, ${Math.sin(angle) * 200}px) rotate(360deg)` }, 
-                    // Fade out as it falls further
-                    { opacity: 0, transform: `translate(${Math.cos(angle) * 250}px, ${Math.sin(angle) * 400}px) rotate(720deg)` } 
+                    { opacity: 0.5, transform: `translate(${Math.cos(angle) * 150}px, ${Math.sin(angle) * 200}px) rotate(360deg)` },
+                    { opacity: 0, transform: `translate(${Math.cos(angle) * 250}px, ${Math.sin(angle) * 400}px) rotate(720deg)` }
                 ], {
                     duration: duration * 1000,
-                    easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)', // Parabolic/falling motion curve
+                    easing: 'cubic-bezier(0.1, 0.7, 1.0, 0.1)', 
                     fill: 'forwards'
                 });
                 
@@ -288,42 +239,32 @@
         }
         
         /**
-         * Kicks off the celebration effects, triggered by user interaction.
+         * Runs the celebration effects repeatedly for 5 seconds when the timer hits zero.
          */
-        function startCelebrationEffects() {
+        function triggerCelebration() {
             if (celebrationRun) return;
+            clearInterval(celebrationInterval);
+            clearTimeout(celebrationDurationTimeout);
             
             celebrationRun = true;
             
-            // 1. Play the sound immediately (since this function is user-initiated)
-            playCelebrationTone();
-
-            // Disable the button to prevent multiple simultaneous effects
-            document.getElementById('celebrate-btn').disabled = true;
-            document.getElementById('celebrate-btn').textContent = '🥳 Celebrating...';
-
-            // Function to run the repeating visual effects
             const runEffects = () => {
-                // 2. Shake Animation
+                // 1. Shake Animation
                 countdownContainerEl.classList.remove('shake-animation');
-                // Use offsetWidth to force a reflow/restart the CSS animation
                 void countdownContainerEl.offsetWidth; 
                 countdownContainerEl.classList.add('shake-animation');
                 
-                // 3. Pure JS Particle Effect
+                // 2. Pure JS Particle Effect
                 emitParticles();
             };
             
             runEffects(); 
-            // Repeat the effects every 750ms
             celebrationInterval = setInterval(runEffects, 750); 
             
             // Stop the repeating effects after 5 seconds
             celebrationDurationTimeout = setTimeout(() => {
                 clearInterval(celebrationInterval);
                 celebrationInterval = null;
-                // Clean up the button text after celebration ends
-                document.getElementById('celebrate-btn').textContent = '🎉 Done! 🎉';
             }, 5000); 
         }
         
@@ -410,7 +351,7 @@
                 let targetWorkStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), startHour, 0, 0).getTime();
                 let targetWorkEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate(), endHour, 0, 0).getTime();
 
-                // Effective end time is the earlier of the actual target time (12:00:00) or the work end time (4 PM).
+                // Effective end time is the earlier of the actual target time (18:38) or the work end time (4 PM).
                 let effectiveTargetTime = Math.min(targetTimestamp, targetWorkEnd);
 
                 if (effectiveTargetTime > targetWorkStart) {
@@ -437,28 +378,21 @@
                 minutesEl.textContent = '00';
                 secondsEl.textContent = '00';
                 
-                // Show the fancy message and the celebration button
+                // === FANCY UPDATE (Mobile Optimized) ===
                 expiryMessageEl.innerHTML = `
-                    <div class="flex flex-col items-center space-y-4">
-                        <span 
-                            class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
-                                bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
-                                fancy-pulse">
-                            FREEEEEDOMMM!
-                        </span>
-                        <!-- NEW BUTTON: Requires user interaction to enable sound/effects -->
-                        <button id="celebrate-btn" class="px-8 py-3 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white font-bold rounded-full shadow-lg transition duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500 focus:ring-opacity-50">
-                            🎉 Start Celebration 🎉
-                        </button>
-                    </div>
+                    <span 
+                        class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-widest text-transparent bg-clip-text 
+                               bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 
+                               fancy-pulse">
+                        FREEEEEDOMMM!
+                    </span>
                 `;
+                // ======================================
                 
                 expiryMessageEl.classList.remove('hidden');
-                document.getElementById('timer-display').classList.add('hidden'); // Hide the timer display
+                document.getElementById('timer-display').classList.add('opacity-50');
                 
-                // Attach the event listener for the celebration
-                document.getElementById('celebrate-btn').addEventListener('click', startCelebrationEffects, { once: true });
-                
+                triggerCelebration(); 
                 return;
             }
             
@@ -482,10 +416,7 @@
         
         window.onload = function() {
             updateCountdown();
-            // Start the interval only if the celebration hasn't started yet (for future runs)
-            if (!document.getElementById('timer-display').classList.contains('hidden')) {
-                countdownInterval = setInterval(updateCountdown, 1000);
-            }
+            countdownInterval = setInterval(updateCountdown, 1000);
         }
     </script>
 </body>
