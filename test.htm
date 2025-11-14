@@ -53,8 +53,8 @@
         <!-- Custom Modal for Alert -->
         <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-white p-8 rounded-xl shadow-2xl text-center w-full max-w-sm">
-                <h3 class="text-2xl font-bold text-red-600 mb-4">Time's Up!</h3>
-                <p id="modal-text" class="text-lg text-gray-700 mb-6">Your synthesized alarm is playing!</p>
+                <h3 class="text-2xl font-bold text-red-600 mb-4">Time's Up! Congratulations!</h3>
+                <p id="modal-text" class="text-lg text-gray-700 mb-6">Your celebratory chime is playing!</p>
                 <button id="modal-close-button" class="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-150">
                     Stop & Close
                 </button>
@@ -76,25 +76,25 @@
         let intervalId = null;
         let totalSeconds = 0;
         let isRunning = false;
-        let synth = null; // Tone.js Synth instance
-        let feedbackDelay = null; // Tone.js Delay instance for the chime effect
+        let synth = null; // Tone.js PluckSynth instance
+        let reverb = null; // Tone.js Reverb instance
 
-        // --- Tone.js Setup ---
+        // --- Tone.js Setup (Updated for a brighter, congratulatory sound) ---
         function setupAudio() {
-            // A simple synth (sine wave for clean tone)
-            synth = new Tone.Synth({
-                oscillator: { type: "sine" },
-                envelope: { attack: 0.005, decay: 0.1, sustain: 0.1, release: 0.5 },
-            }).toDestination();
-
-            // Add a slight delay/reverb effect for a "chime" sound
-            feedbackDelay = new Tone.FeedbackDelay("8n", 0.5).toDestination();
+            // A PluckSynth is ideal for bell, chime, or guitar-like sounds.
+            synth = new Tone.PluckSynth().toDestination();
             
-            // Connect synth to the delay and then to the main output
-            synth.connect(feedbackDelay);
+            // Add a spacious reverb effect to give the chime depth
+            reverb = new Tone.Reverb({
+                decay: 2, // Longer decay for a lingering sound
+                preDelay: 0.01,
+            }).toDestination();
+            
+            // Connect synth to the reverb and then to the main output
+            synth.connect(reverb);
         }
         
-        // This function plays the sound
+        // This function plays the celebratory sound
         function playAlarm() {
             // First, ensure audio context is running (required for browser security)
             if (Tone.context.state !== 'running') {
@@ -102,17 +102,26 @@
                 statusMessage.textContent = "Audio context started!";
             }
             
-            // Play a simple musical pattern (like a high-pitched C major triad)
+            // Play an ascending C major arpeggio (C4, E4, G4, C5) - sounds happy and conclusive.
             const now = Tone.now();
+            const duration = "8n"; // Eight note duration for quick taps
+            const spacing = 0.1; // Delay between notes in seconds
             
-            synth.triggerAttackRelease("C5", "8n", now);
-            synth.triggerAttackRelease("E5", "8n", now + 0.15);
-            synth.triggerAttackRelease("G5", "4n", now + 0.3);
+            synth.triggerAttackRelease("C4", duration, now);
+            synth.triggerAttackRelease("E4", duration, now + spacing * 1);
+            synth.triggerAttackRelease("G4", duration, now + spacing * 2);
+            synth.triggerAttackRelease("C5", duration, now + spacing * 3);
+            
+            // Add a final, sustained chord for resolution
+            Tone.Transport.scheduleOnce(() => {
+                 synth.triggerAttackRelease(["C4", "E4", "G4"], "1n", Tone.now());
+            }, now + spacing * 4);
         }
 
         // This function stops the sound
         function stopAlarm() {
-            // You can stop the sound by releasing all active notes
+            // Stop the main transport and release active notes
+            Tone.Transport.stop();
             synth.releaseAll();
         }
 
@@ -159,7 +168,7 @@
                     clearInterval(intervalId);
                     isRunning = false;
                     startButton.textContent = 'Start Timer';
-                    statusMessage.textContent = 'Time completed!';
+                    statusMessage.textContent = 'Time completed! Congratulations!';
                     
                     // --- Alarm Trigger ---
                     playAlarm();
