@@ -32,7 +32,7 @@
             z-index: -1;
             /* Background Image Application - Using the URL from your last request */
             background-image: url('https://raw.githubusercontent.com/programmer777x/mango-mango-countdown/main/Anime%20Chibi%20Congratulations%206.jpg');
-            background-size: cover;
+            background-size: contain; /* CHANGED from 'cover' to 'contain' to show the full image */
             background-position: center;
             background-repeat: no-repeat;
             /* Filter Applied ONLY to the background layer */
@@ -131,8 +131,8 @@
         }
         /* Keyframes for a custom subtle pulse used on the celebration text */
         @keyframes vibrant-pulse {
-          0%, 100% { text-shadow: 0 0 5px rgba(255, 165, 0, 0.5); }
-          50% { text-shadow: 0 0 10px rgba(255, 200, 0, 0.8), 0 0 15px rgba(255, 100, 0, 0.5); }
+            0%, 100% { text-shadow: 0 0 5px rgba(255, 165, 0, 0.5); }
+            50% { text-shadow: 0 0 10px rgba(255, 200, 0, 0.8), 0 0 15px rgba(255, 100, 0, 0.5); }
         }
         .fancy-pulse {
             animation: vibrant-pulse 2s infinite alternate;
@@ -190,7 +190,7 @@
         // Working Schedule
         const DAYS_OFF = [1, 4]; // Monday (1) and Thursday (4)
         const START_HOUR = 8; // 8 AM
-        const END_HOUR = 16;  // 4 PM (24-hour format)
+        const END_HOUR = 16;  // 4 PM (24-hour format)
         const SECONDS_PER_WORKDAY = (END_HOUR - START_HOUR) * 3600;
         
         // DOM Elements
@@ -271,8 +271,8 @@
          */
         function playCelebrationTone(forcePlay = false) {
             if (Tone.context.state === 'running' || forcePlay) {
-                 _actuallyPlayTone();
-                 audioPromptEl.classList.add('hidden'); // Ensure hidden if sound plays
+                _actuallyPlayTone();
+                audioPromptEl.classList.add('hidden'); // Ensure hidden if sound plays
             } else if (Tone.context.state === 'suspended') {
                 Tone.context.resume().then(() => {
                     audioContextEnabled = true;
@@ -282,7 +282,7 @@
                     audioPromptEl.classList.remove('hidden');
                 });
             } else {
-                 audioPromptEl.classList.remove('hidden');
+                audioPromptEl.classList.remove('hidden');
             }
         }
 
@@ -422,7 +422,7 @@
             }
 
             if (isTargetToday) {
-                 return Math.max(0, Math.floor(totalWorkSeconds));
+                return Math.max(0, Math.floor(totalWorkSeconds));
             }
             
             // --- Phase 2 & 3: Full Days and Target Day Logic ---
@@ -516,7 +516,7 @@
                 // If expired on load, we don't need the interval, but we must call triggerCelebration
                 triggerCelebration(); 
             } else {
-                 countdownInterval = setInterval(updateCountdown, 1000);
+                countdownInterval = setInterval(updateCountdown, 1000);
             }
         }
     </script>
